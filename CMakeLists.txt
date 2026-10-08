@@ -4,7 +4,10 @@ project(viogsf CXX)
 
 include(GNUInstallDirs)
 
+find_package(ZLIB REQUIRED)
+
 add_library(viogsf SHARED
+    gsf_loader.cpp
     vbam/apu/Blip_Buffer.cpp
     vbam/apu/Effects_Buffer.cpp
     vbam/apu/Gb_Apu.cpp
@@ -29,6 +32,8 @@ target_include_directories(viogsf PRIVATE
 
 set_target_properties(viogsf PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
+target_link_libraries(viogsf PRIVATE ZLIB::ZLIB)
+
 install(TARGETS viogsf
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -37,4 +42,7 @@ install(TARGETS viogsf
 install(DIRECTORY vbam/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/viogsf/vbam
     FILES_MATCHING PATTERN "*.h"
+)
+install(FILES gsf_loader.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/viogsf
 )
