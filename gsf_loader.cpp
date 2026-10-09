@@ -1,5 +1,6 @@
 #include "gsf_loader.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -290,4 +291,67 @@ void viogsf_clear_voice_mutes(viogsf_t *player) {
     if (!player || !player->gba)
         return;
     soundScopeClearVoiceMutes(player->gba);
+}
+
+namespace {
+struct StemAccum {
+    std::vector<int16_t> voices[6];
+    GBAScopeCallback forward = nullptr;
+    void *forwardUser = nullptr;
+};
+
+void stemAccumCallback(int voice, const short *samples, int frames, void *user) {
+    auto *accum = static_cast<StemAccum *>(user);
+    if (accum && voice >= 0 && voice < 6 && samples && frames > 0)
+        accum->voices[voice].insert(accum->voices[voice].end(), samples, samples + frames);
+    if (accum && accum->forward)
+        accum->forward(voice, samples, frames, accum->forwardUser);
+}
+} // namespace
+
+int viogsf_render_voices(viogsf_t *player, int16_t *out_voices[6], int frames) {
+    if (!player || !player->gba || !out_voices || frames <= 0)
+        return 0;
+    for (int voice = 0; voice < 6; voice++)
+        if (!out_voices[voice])
+            return 0;
+
+    void *savedUser = nullptr;
+    GBAScopeCallback savedCallback = soundScopeGetCallback(player->gba, &savedUser);
+    const int savedMutes = soundScopeGetVoiceMutes(player->gba);
+    ScopeSink savedSink = std::move(player->sink);
+    const size_t savedSurplus = player->surplus;
+
+    StemAccum accum;
+    accum.forward = savedCallback;
+    accum.forwardUser = savedUser;
+    soundScopeClearVoiceMutes(player->gba);
+    soundScopeSetCallback(player->gba, stemAccumCallback, &accum);
+
+    player->sink.samples.clear();
+    player->surplus = 0;
+    size_t minStem = 0;
+    // One quantum always yields samples; the cap is only a backstop.
+    for (int quanta = 0; quanta < frames / 64 + 16; quanta++) {
+        player->sink.samples.clear();
+        CPULoop(player->gba, kFrameTicks);
+        minStem = accum.voices[0].size();
+        for (int voice = 1; voice < 6; voice++)
+            minStem = std::min(minStem, accum.voices[voice].size());
+        if (minStem >= (size_t)frames)
+            break;
+    }
+
+    size_t got = std::min(minStem, (size_t)frames);
+    for (int voice = 0; voice < 6; voice++)
+        memcpy(out_voices[voice], accum.voices[voice].data(), got * sizeof(int16_t));
+
+    soundScopeSetCallback(player->gba, savedCallback, savedUser);
+    soundScopeClearVoiceMutes(player->gba);
+    for (int voice = 0; voice < 6; voice++)
+        if (savedMutes >> voice & 1)
+            soundScopeSetVoiceMute(player->gba, voice, 1);
+    player->sink = std::move(savedSink);
+    player->surplus = savedSurplus;
+    return (int)got;
 }

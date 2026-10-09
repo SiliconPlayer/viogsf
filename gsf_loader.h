@@ -34,6 +34,12 @@ void viogsf_set_scope_callback(viogsf_t *player, viogsf_scope_cb_t callback, voi
 void viogsf_set_voice_mute(viogsf_t *player, int voice, int muted);
 void viogsf_clear_voice_mutes(viogsf_t *player);
 
+// Renders the next frames of each voice into six mono buffers (Square 1,
+// Square 2, Wave, Noise, PCM FIFO A, PCM FIFO B), post-volume 16-bit. The
+// stereo mix advances identically and is discarded. Installed scope taps
+// keep firing; scope mutes do not apply to stems. Returns frames written.
+int viogsf_render_voices(viogsf_t *player, int16_t *out_voices[6], int frames);
+
 #ifdef __cplusplus
 }
 #endif

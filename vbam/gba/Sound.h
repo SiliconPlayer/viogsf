@@ -17,6 +17,8 @@ typedef void (*GBAScopeCallback)(int voice, const short *samples, int frames, vo
 void soundScopeSetCallback(GBASystem *, GBAScopeCallback callback, void *user);
 void soundScopeSetVoiceMute(GBASystem *, int voice, int muted);
 void soundScopeClearVoiceMutes(GBASystem *);
+GBAScopeCallback soundScopeGetCallback(GBASystem *, void **userOut);
+int soundScopeGetVoiceMutes(GBASystem *);
 
 // Initializes sound and returns true if successful. Sets sound quality to
 // current value in soundQuality global.

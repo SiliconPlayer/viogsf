@@ -414,6 +414,18 @@ void soundScopeClearVoiceMutes( GBASystem *gba )
     gba->scopeVoiceMutes = 0;
 }
 
+GBAScopeCallback soundScopeGetCallback( GBASystem *gba, void **userOut )
+{
+    if ( userOut )
+        *userOut = gba->scopeCallbackUser;
+    return gba->scopeCallback;
+}
+
+int soundScopeGetVoiceMutes( GBASystem *gba )
+{
+    return gba->scopeVoiceMutes;
+}
+
 static void apply_filtering(GBASystem *gba)
 {
     gba->soundFiltering_ = gba->soundFiltering;
