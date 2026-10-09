@@ -6,7 +6,7 @@ struct GBASystem;
 extern int armExecute(GBASystem *);
 extern int thumbExecute(GBASystem *);
 
-#ifdef __GNUC__
+#if defined(__GNUC__) && defined(__i386__)
 # define INSN_REGPARM __attribute__((regparm(2)))
 # define LIKELY(x) __builtin_expect(!!(x),1)
 # define UNLIKELY(x) __builtin_expect(!!(x),0)
