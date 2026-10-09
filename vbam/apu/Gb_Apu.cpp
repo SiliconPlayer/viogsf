@@ -61,6 +61,12 @@ void Gb_Apu::set_output( Blip_Buffer* center, Blip_Buffer* left, Blip_Buffer* ri
 	while ( ++i < osc );
 }
 
+void Gb_Apu::set_tap_output( Blip_Buffer* tap, int chan )
+{
+	require( (unsigned) chan < osc_count );
+	oscs [chan]->tap_output = tap;
+}
+
 void Gb_Apu::synth_volume( int iv )
 {
 	double v = volume_ * 0.60 / osc_count / 15 /*steps*/ / 8 /*master vol range*/ * iv;
@@ -182,6 +188,7 @@ Gb_Apu::Gb_Apu()
 		Gb_Osc& o = *oscs [i];
 		o.regs        = &regs [i * 5];
 		o.output      = 0;
+		o.tap_output  = 0;
 		o.outputs [0] = 0;
 		o.outputs [1] = 0;
 		o.outputs [2] = 0;

@@ -273,3 +273,21 @@ void viogsf_close(viogsf_t *player) {
     delete player->gba;
     delete player;
 }
+
+void viogsf_set_scope_callback(viogsf_t *player, viogsf_scope_cb_t callback, void *user) {
+    if (!player || !player->gba)
+        return;
+    soundScopeSetCallback(player->gba, callback, user);
+}
+
+void viogsf_set_voice_mute(viogsf_t *player, int voice, int muted) {
+    if (!player || !player->gba)
+        return;
+    soundScopeSetVoiceMute(player->gba, voice, muted);
+}
+
+void viogsf_clear_voice_mutes(viogsf_t *player) {
+    if (!player || !player->gba)
+        return;
+    soundScopeClearVoiceMutes(player->gba);
+}

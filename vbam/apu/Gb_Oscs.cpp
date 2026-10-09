@@ -40,6 +40,8 @@ inline void Gb_Osc::update_amp( blip_time_t time, int new_amp )
 	{
 		last_amp = new_amp;
 		med_synth->offset( time, delta, output );
+		if ( tap_output )
+			med_synth->offset( time, delta, tap_output );
 	}
 }
 
@@ -390,6 +392,8 @@ void Gb_Square::run( blip_time_t time, blip_time_t end_time )
 				if ( ph == 0 || ph == duty )
 				{
 					good_synth->offset_inline( time, delta, out );
+					if ( tap_output )
+						good_synth->offset_inline( time, delta, tap_output );
 					delta = -delta;
 				}
 				time += per;
@@ -558,6 +562,8 @@ void Gb_Noise::run( blip_time_t time, blip_time_t end_time )
 					bits |= ~mask;
 					delta = -delta;
 					med_synth->offset_inline( time, delta, out );
+					if ( tap_output )
+						med_synth->offset_inline( time, delta, tap_output );
 				}
 				time += per;
 			}
@@ -649,6 +655,8 @@ void Gb_Wave::run( blip_time_t time, blip_time_t end_time )
 				{
 					lamp = amp;
 					med_synth->offset_inline( time, delta, out );
+					if ( tap_output )
+						med_synth->offset_inline( time, delta, tap_output );
 				}
 				time += per;
 			}

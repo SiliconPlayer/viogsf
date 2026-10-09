@@ -44,5 +44,6 @@ install(DIRECTORY vbam/
     FILES_MATCHING PATTERN "*.h"
 )
 install(FILES gsf_loader.h
+    viogsf_scope.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/viogsf
 )

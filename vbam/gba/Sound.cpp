@@ -41,9 +41,15 @@ void Gba_Pcm::init(GBASystem *gba)
 {
     this->gba = gba;
 	output    = 0;
+	tap_output = 0;
 	last_time = 0;
 	last_amp  = 0;
 	shift     = 0;
+}
+
+void Gba_Pcm::set_tap_output( GBA::Blip_Buffer* tap )
+{
+	tap_output = tap;
 }
 
 void Gba_Pcm::apply_control( int idx )
@@ -111,6 +117,8 @@ void Gba_Pcm::update( int dac )
 			}
 
             gba->pcm_synth [filter].offset( time, delta, output );
+			if ( tap_output )
+				gba->pcm_synth [filter].offset( time, delta, tap_output );
 		}
 		last_time = time;
 	}
@@ -293,6 +301,33 @@ static void end_frame( GBASystem *gba, GBA::blip_time_t time )
 
     gba->gb_apu       ->end_frame( time );
     gba->stereo_buffer->end_frame( time );
+
+    if ( gba->scopeCallback )
+        for ( int i = 0; i < GBA_SCOPE_VOICES; i++ )
+            if ( gba->scopeTapBuffers [i] )
+                gba->scopeTapBuffers [i]->end_frame( time );
+}
+
+// Largest tap chunk per mix drain at any supported rate.
+enum { SCOPE_CHUNK_MAX = 2048 };
+
+static void scope_fire( GBASystem *gba, long frames )
+{
+    if ( frames <= 0 || frames > SCOPE_CHUNK_MAX )
+        return;
+    static short chunk [SCOPE_CHUNK_MAX];
+    for ( int voice = 0; voice < GBA_SCOPE_VOICES; voice++ )
+    {
+        GBA::Blip_Buffer* tap = gba->scopeTapBuffers [voice];
+        if ( !tap )
+            continue;
+        long got = tap->read_samples( chunk, frames );
+        if ( got <= 0 )
+            continue;
+        if ( gba->scopeVoiceMutes >> voice & 1 )
+            memset( chunk, 0, (size_t) got * sizeof chunk [0] );
+        gba->scopeCallback( voice, chunk, (int) got, gba->scopeCallbackUser );
+    }
 }
 
 void flush_samples(GBASystem *gba, GBA::Multi_Buffer * buffer)
@@ -316,7 +351,67 @@ void flush_samples(GBASystem *gba, GBA::Multi_Buffer * buffer)
             soundResume(gba);
 
         gba->output->write(gba->soundFinalWave, samples_read * sizeof *gba->soundFinalWave);
+
+        // Stereo mix reads pairs; taps are mono, one frame per pair.
+        if ( gba->scopeCallback )
+            scope_fire( gba, samples_read / 2 );
 	}
+}
+
+static void scope_rehook( GBASystem *gba )
+{
+    if ( gba->gb_apu )
+        for ( int i = 0; i < 4; i++ )
+            gba->gb_apu->set_tap_output( gba->scopeTapBuffers [i], i );
+    gba->pcm [0].pcm.set_tap_output( gba->scopeTapBuffers [4] );
+    gba->pcm [1].pcm.set_tap_output( gba->scopeTapBuffers [5] );
+}
+
+static void scope_ensure_buffers( GBASystem *gba )
+{
+    for ( int i = 0; i < GBA_SCOPE_VOICES; i++ )
+    {
+        if ( !gba->scopeTapBuffers [i] )
+            gba->scopeTapBuffers [i] = new GBA::Blip_Buffer; // TODO: handle out of memory
+        gba->scopeTapBuffers [i]->set_sample_rate( gba->soundSampleRate ); // TODO: handle out of memory
+        gba->scopeTapBuffers [i]->clock_rate( gba->gb_apu->clock_rate );
+        gba->scopeTapBuffers [i]->clear();
+    }
+    scope_rehook( gba );
+}
+
+void soundScopeSetCallback( GBASystem *gba, GBAScopeCallback callback, void *user )
+{
+    gba->scopeCallback = callback;
+    gba->scopeCallbackUser = user;
+    if ( callback )
+    {
+        if ( gba->gb_apu && gba->stereo_buffer )
+            scope_ensure_buffers( gba );
+    }
+    else
+    {
+        if ( gba->gb_apu )
+            for ( int i = 0; i < 4; i++ )
+                gba->gb_apu->set_tap_output( 0, i );
+        gba->pcm [0].pcm.set_tap_output( 0 );
+        gba->pcm [1].pcm.set_tap_output( 0 );
+    }
+}
+
+void soundScopeSetVoiceMute( GBASystem *gba, int voice, int muted )
+{
+    if ( voice < 0 || voice >= GBA_SCOPE_VOICES )
+        return;
+    if ( muted )
+        gba->scopeVoiceMutes |= 1 << voice;
+    else
+        gba->scopeVoiceMutes &= ~(1 << voice);
+}
+
+void soundScopeClearVoiceMutes( GBASystem *gba )
+{
+    gba->scopeVoiceMutes = 0;
 }
 
 static void apply_filtering(GBASystem *gba)
@@ -423,6 +518,9 @@ static void remake_stereo_buffer(GBASystem *gba)
 
     apply_muting(gba);
     apply_volume(gba);
+
+    if ( gba->scopeCallback )
+        scope_ensure_buffers(gba);
 }
 
 void soundShutdown(GBASystem *gba)
@@ -439,6 +537,13 @@ void soundShutdown(GBASystem *gba)
 	{
         delete gba->stereo_buffer;
         gba->stereo_buffer = 0;
+	}
+
+	// Scope taps
+    for ( int i = 0; i < GBA_SCOPE_VOICES; i++ )
+	{
+        delete gba->scopeTapBuffers [i];
+        gba->scopeTapBuffers [i] = 0;
 	}
 }
 

@@ -32,6 +32,7 @@ public:
 
 	Blip_Buffer*    outputs [4];// NULL, right, left, center
 	Blip_Buffer*    output;     // where to output sound
+	Blip_Buffer*    tap_output; // per-voice scope tap; NULL disables
 	BOOST::uint8_t* regs;       // osc's 5 registers
 	int             mode;       // mode_dmg, mode_cgb, mode_agb
 	int             dac_off_amp;// amplitude when DAC is off

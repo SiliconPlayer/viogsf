@@ -237,6 +237,12 @@ GBASystem::GBASystem()
 
     gb_apu = 0;
     stereo_buffer = 0;
+
+    for (int i = 0; i < 6; i++)
+        scopeTapBuffers[i] = 0;
+    scopeCallback = 0;
+    scopeCallbackUser = 0;
+    scopeVoiceMutes = 0;
 }
 
 const int TIMER_TICKS[4] = {

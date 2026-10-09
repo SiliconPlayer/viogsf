@@ -63,10 +63,12 @@ public:
     void apply_control( int idx );
     void update( int dac );
     void end_frame( GBA::blip_time_t );
+    void set_tap_output( GBA::Blip_Buffer* tap );
 
 private:
     GBASystem* gba;
     GBA::Blip_Buffer* output;
+    GBA::Blip_Buffer* tap_output; // per-voice scope tap; NULL disables
     GBA::blip_time_t last_time;
     int last_amp;
     int shift;
@@ -348,6 +350,13 @@ struct GBASystem
     Gba_Pcm_Fifo        pcm [2];
     GBA::Gb_Apu*        gb_apu;
     GBA::Stereo_Buffer* stereo_buffer;
+
+    // Channel-scope taps: one mono buffer per voice (0-3 PSG, 4-5 PCM),
+    // written while scopeCallback is set. Muted voices tap silence.
+    GBA::Blip_Buffer*   scopeTapBuffers [6];
+    GBAScopeCallback    scopeCallback;
+    void*               scopeCallbackUser;
+    int                 scopeVoiceMutes;
 
     GBA::Blip_Synth<GBA::blip_best_quality,1> pcm_synth [3]; // 32 kHz, 16 kHz, 8 kHz
 

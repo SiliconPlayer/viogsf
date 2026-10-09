@@ -24,6 +24,10 @@ public:
 	void set_output( Blip_Buffer* center, Blip_Buffer* left = NULL, Blip_Buffer* right = NULL,
 			int chan = osc_count );
 
+	// Sets the per-voice scope tap buffer for one channel (0-3), or NULL to
+	// disable. Tap receives a copy of the channel's post-volume output.
+	void set_tap_output( Blip_Buffer* tap, int chan );
+
 	// Resets hardware to initial power on state BEFORE boot ROM runs. Mode selects
 	// sound hardware. Additional AGB wave features are enabled separately.
 	enum mode_t {

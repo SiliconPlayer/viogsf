@@ -28,6 +28,12 @@ int viogsf_render(viogsf_t *player, int16_t *out_stereo, int frames);
 void viogsf_reset(viogsf_t *player);
 void viogsf_close(viogsf_t *player);
 
+// Channel-scope taps; see viogsf_scope.h.
+typedef void (*viogsf_scope_cb_t)(int voice, const short *samples, int frames, void *user);
+void viogsf_set_scope_callback(viogsf_t *player, viogsf_scope_cb_t callback, void *user);
+void viogsf_set_voice_mute(viogsf_t *player, int voice, int muted);
+void viogsf_clear_voice_mutes(viogsf_t *player);
+
 #ifdef __cplusplus
 }
 #endif

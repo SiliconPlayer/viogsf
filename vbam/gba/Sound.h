@@ -9,6 +9,15 @@ struct GBASystem;
 
 struct GBASoundOut;
 
+// Channel-scope tap: voice index 0-3 are PSG (Square 1, Square 2, Wave,
+// Noise), 4-5 are PCM FIFO A/B. Each voice reports its post-volume mono
+// contribution; muted voices report silence. Frames is always positive.
+enum { GBA_SCOPE_VOICES = 6 };
+typedef void (*GBAScopeCallback)(int voice, const short *samples, int frames, void *user);
+void soundScopeSetCallback(GBASystem *, GBAScopeCallback callback, void *user);
+void soundScopeSetVoiceMute(GBASystem *, int voice, int muted);
+void soundScopeClearVoiceMutes(GBASystem *);
+
 // Initializes sound and returns true if successful. Sets sound quality to
 // current value in soundQuality global.
 bool soundInit(GBASystem *, GBASoundOut *);
