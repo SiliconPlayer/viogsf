@@ -299,6 +299,22 @@ void viogsf_set_voice_audible_mute(viogsf_t *player, int voice, int muted) {
     soundSetEnable(player->gba, 0x30f & ~player->audibleMutes);
 }
 
+void viogsf_set_interpolation(viogsf_t *player, int enabled) {
+    if (!player || !player->gba)
+        return;
+    player->gba->soundInterpolation = enabled != 0;
+}
+
+void viogsf_set_filtering(viogsf_t *player, float level) {
+    if (!player || !player->gba)
+        return;
+    if (level < 0.0f)
+        level = 0.0f;
+    if (level > 1.0f)
+        level = 1.0f;
+    player->gba->soundFiltering = level;
+}
+
 void viogsf_clear_voice_audible_mutes(viogsf_t *player) {
     if (!player || !player->gba)
         return;

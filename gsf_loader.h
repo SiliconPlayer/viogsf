@@ -40,6 +40,11 @@ void viogsf_clear_voice_mutes(viogsf_t *player);
 void viogsf_set_voice_audible_mute(viogsf_t *player, int voice, int muted);
 void viogsf_clear_voice_audible_mutes(viogsf_t *player);
 
+// Toggles PCM interpolation (default on) and the PCM low-pass filter
+// level 0..1 (default 0.5). Both apply live during rendering.
+void viogsf_set_interpolation(viogsf_t *player, int enabled);
+void viogsf_set_filtering(viogsf_t *player, float level);
+
 // Renders the next frames of each voice into six mono buffers (Square 1,
 // Square 2, Wave, Noise, PCM FIFO A, PCM FIFO B), post-volume 16-bit. The
 // stereo mix advances identically and is discarded. Installed scope taps
