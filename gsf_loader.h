@@ -34,6 +34,12 @@ void viogsf_set_scope_callback(viogsf_t *player, viogsf_scope_cb_t callback, voi
 void viogsf_set_voice_mute(viogsf_t *player, int voice, int muted);
 void viogsf_clear_voice_mutes(viogsf_t *player);
 
+// Audible per-voice mute in the emulated stereo mix. Unlike the scope
+// mutes above, this changes what is rendered. Voices are numbered as in
+// viogsf_scope.h.
+void viogsf_set_voice_audible_mute(viogsf_t *player, int voice, int muted);
+void viogsf_clear_voice_audible_mutes(viogsf_t *player);
+
 // Renders the next frames of each voice into six mono buffers (Square 1,
 // Square 2, Wave, Noise, PCM FIFO A, PCM FIFO B), post-volume 16-bit. The
 // stereo mix advances identically and is discarded. Installed scope taps

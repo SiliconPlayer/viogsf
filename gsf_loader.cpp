@@ -111,6 +111,7 @@ struct ScopeSink : public GBASoundOut {
 
 struct viogsf_s {
     GBASystem *gba = nullptr;
+    int audibleMutes = 0;
     ScopeSink sink;
     std::vector<uint8_t> rom_image;
     uint32_t entry = 0;
@@ -285,6 +286,24 @@ void viogsf_set_voice_mute(viogsf_t *player, int voice, int muted) {
     if (!player || !player->gba)
         return;
     soundScopeSetVoiceMute(player->gba, voice, muted);
+}
+
+void viogsf_set_voice_audible_mute(viogsf_t *player, int voice, int muted) {
+    static const int bits[6] = { 0x001, 0x002, 0x004, 0x008, 0x100, 0x200 };
+    if (!player || !player->gba || voice < 0 || voice > 5)
+        return;
+    if (muted)
+        player->audibleMutes |= bits[voice];
+    else
+        player->audibleMutes &= ~bits[voice];
+    soundSetEnable(player->gba, 0x30f & ~player->audibleMutes);
+}
+
+void viogsf_clear_voice_audible_mutes(viogsf_t *player) {
+    if (!player || !player->gba)
+        return;
+    player->audibleMutes = 0;
+    soundSetEnable(player->gba, 0x30f);
 }
 
 void viogsf_clear_voice_mutes(viogsf_t *player) {
